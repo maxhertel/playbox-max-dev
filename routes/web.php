@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SpotifyController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -25,6 +26,25 @@ Route::get('/spotify/callback', [SpotifyController::class, 'callback']);
 Route::get('/spotify/search', [SpotifyController::class, 'search']);
 Route::post('/spotify/play', [SpotifyController::class, 'play']);   
 
+Route::get('/admin/artisan/run', function () {
 
+  
+
+    // Comandos que você quer rodar
+    Artisan::call('config:clear');
+    Artisan::call('route:clear');
+    Artisan::call('view:clear');
+    Artisan::call('cache:clear');
+    Artisan::call('optimize:clear');
+
+    // dump-autoload NÃO é Artisan, é Composer — então não entra aqui
+
+    return response()->json([
+        'status' => 'ok',
+        'message' => 'Comandos executados com sucesso',
+        'output' => Artisan::output()
+    ]);
+
+});
 
 require __DIR__.'/auth.php';
