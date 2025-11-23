@@ -15,16 +15,28 @@ class SpotifyController extends Controller
         return redirect($spotify->getAuthUrl());
     }
 
-    public function callback(Request $request, SpotifyService $spotify)
-    {
-        $token = $spotify->getAccessToken($request->code);
-
-        session([
-            'spotify_token' => $token['access_token']
-        ]);
-
-        return redirect('/spotify/painel');
+public function callback(Request $request, SpotifyService $spotify)
+{
+    if (!$request->has('code')) {
+        return response()->json(['error' => 'Código não recebido'], 400);
     }
+
+    $token = $spotify->getAccessToken($request->code);
+
+    if (!$token || !isset($token['access_token'])) {
+        return response()->json([
+            'error' => 'Falha ao obter token do Spotify',
+            'spotify_response' => $token
+        ], 500);
+    }
+
+    session([
+        'spotify_token' => $token['access_token']
+    ]);
+
+    return redirect('/jukebox');
+}
+
 
     public function search(Request $request, SpotifyService $spotify)
     {

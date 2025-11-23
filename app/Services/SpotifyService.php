@@ -34,18 +34,28 @@ class SpotifyService
         ]);
     }
 
-    public function getAccessToken($code)
-    {
-        $response = Http::asForm()
-            ->withBasicAuth($this->clientId, $this->clientSecret)
-            ->post('https://accounts.spotify.com/api/token', [
-                'grant_type'   => 'authorization_code',
-                'code'         => $code,
-                'redirect_uri' => $this->redirectUri
-            ]);
+public function getAccessToken($code)
+{
+    $response = Http::asForm()
+        ->withBasicAuth($this->clientId, $this->clientSecret)
+        ->post('https://accounts.spotify.com/api/token', [
+            'grant_type'   => 'authorization_code',
+            'code'         => $code,
+            'redirect_uri' => $this->redirectUri
+        ]);
 
-        return $response->json();
+    if (!$response->successful()) {
+        logger()->error('Spotify Token Error', [
+            'status' => $response->status(),
+            'body' => $response->json(),
+        ]);
+
+        return null;
     }
+
+    return $response->json();
+}
+
 
     public function searchTrack(string $query, string $token)
     {
