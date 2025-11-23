@@ -10,6 +10,8 @@ class SpotifyController extends Controller
 {
     public function auth(SpotifyService $spotify)
     {
+         $spotify =  new SpotifyService();
+        
         return redirect($spotify->getAuthUrl());
     }
 
