@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\JukeboxController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SpotifyController;
 use Illuminate\Support\Facades\Artisan;
@@ -25,6 +26,9 @@ Route::get('/spotify/callback', [SpotifyController::class, 'callback']);
 
 Route::get('/spotify/search', [SpotifyController::class, 'search']);
 Route::post('/spotify/play', [SpotifyController::class, 'play']);   
+
+Route::get('/jukebox', [JukeboxController::class, 'index']);
+Route::get('/jukebox/status', [JukeboxController::class, 'status']);
 
 Route::get('/admin/artisan/run', function () {
 
