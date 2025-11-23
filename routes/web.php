@@ -40,6 +40,7 @@ Route::get('/admin/artisan/run', function () {
     Artisan::call('view:clear');
     Artisan::call('cache:clear');
     Artisan::call('optimize:clear');
+    Artisan::call('migrate');
 
     // dump-autoload NÃO é Artisan, é Composer — então não entra aqui
 
