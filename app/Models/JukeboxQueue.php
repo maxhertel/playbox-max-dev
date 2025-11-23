@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 
 class JukeboxQueue extends Model
 {
