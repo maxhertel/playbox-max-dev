@@ -18,11 +18,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('/login/spotify', [SpotifyController::class, 'redirectToSpotify']);
-Route::get('/spotify/callback', [SpotifyController::class, 'handleCallback']);
-Route::get('/spotify/current-track', [SpotifyController::class, 'getCurrentTrack']);
-Route::get('/spotify/pause', [SpotifyController::class, 'pauseMusic']);
-Route::post('/spotify/play/{trackUri}', [SpotifyController::class, 'playMusic']);
+
+Route::get('/spotify/auth', [SpotifyController::class, 'auth']);
+Route::get('/spotify/callback', [SpotifyController::class, 'callback']);
+
+Route::get('/spotify/search', [SpotifyController::class, 'search']);
+Route::post('/spotify/play', [SpotifyController::class, 'play']);   
 
 
 
