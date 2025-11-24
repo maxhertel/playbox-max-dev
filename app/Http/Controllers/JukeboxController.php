@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\JukeboxQueue;
+use App\Services\SpotifyService;
+use Illuminate\Support\Facades\Request;
 
 class JukeboxController extends Controller
 {
@@ -38,4 +40,27 @@ class JukeboxController extends Controller
             'queue' => $queue
         ]);
     }
+
+    public function search(Request $request, SpotifyService      $spotify)
+{
+    $token = session('spotify_token');
+
+    if (!$token) {
+        return response()->json(['error' => 'Spotify não autenticado'], 401);
+    }
+
+    return $spotify->searchTrack($request->q, $token);
+}
+
+public function addToQueue(Request $request)
+{
+    JukeboxQueue::create([
+        'user_id'    => auth()->id(),
+        'track_name' => $request->track_name,
+        'track_uri'  => $request->track_uri
+    ]);
+
+    return response()->json(['success' => true]);
+}
+
 }

@@ -10,7 +10,19 @@
 <body class="bg-gray-900 text-white p-10">
 
     <h1 class="text-3xl font-bold mb-8">🎵 Jukebox</h1>
+<!-- Pesquisa -->
+<div class="bg-gray-800 p-6 rounded-xl mb-8">
+    <h2 class="text-xl mb-4">🔍 Buscar música</h2>
 
+    <input
+        type="text"
+        id="search"
+        placeholder="Digite nome da música..."
+        class="w-full p-3 rounded bg-gray-700 text-white mb-4"
+    >
+
+    <div id="results" class="space-y-2"></div>
+</div>
     <!-- Música atual -->
     <div class="bg-gray-800 p-6 rounded-xl mb-10">
         <h2 class="text-xl mb-2">🎧 Tocando agora</h2>
@@ -76,6 +88,60 @@
     }
 
     setInterval(updateJukebox, 5000);
+</script>
+<script>
+const searchInput = document.getElementById('search');
+const results = document.getElementById('results');
+
+let debounceTimer = null;
+
+searchInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(async () => {
+        const q = searchInput.value;
+        if (!q) return;
+
+        const res = await fetch(`/jukebox/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+
+        results.innerHTML = '';
+
+        const tracks = data.tracks?.items || [];
+
+        tracks.forEach(track => {
+            const div = document.createElement('div');
+            div.className = 'bg-gray-700 p-3 rounded flex justify-between items-center';
+
+            div.innerHTML = `
+                <span>
+                    🎵 <strong>${track.name}</strong> - ${track.artists[0].name}
+                </span>
+                <button class="bg-green-600 px-4 py-1 rounded">
+                    Adicionar
+                </button>
+            `;
+
+            div.querySelector('button').onclick = async () => {
+                await fetch('/jukebox/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        track_name: `${track.name} - ${track.artists[0].name}`,
+                        track_uri: track.uri
+                    })
+                });
+
+                alert('Adicionado à fila!');
+            };
+
+            results.appendChild(div);
+        });
+    }, 500);
+});
 </script>
 
 </body>

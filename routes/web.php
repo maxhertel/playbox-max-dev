@@ -29,6 +29,8 @@ Route::post('/spotify/play', [SpotifyController::class, 'play']);
 
 Route::get('/jukebox', [JukeboxController::class, 'index']);
 Route::get('/jukebox/status', [JukeboxController::class, 'status']);
+Route::get('/jukebox/search', [JukeboxController::class, 'search']);
+Route::post('/jukebox/add', [JukeboxController::class, 'addToQueue']);
 
 Route::get('/admin/artisan/run', function () {
 
