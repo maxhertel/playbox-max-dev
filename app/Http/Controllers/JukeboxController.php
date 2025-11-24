@@ -42,25 +42,41 @@ class JukeboxController extends Controller
     }
 
     public function search(Request $request, SpotifyService $spotify)
+    {
+        $token = session('spotify_token');
+
+        if (!$token) {
+            return response()->json(['error' => 'Spotify não autenticado'], 401);
+        }
+
+        return $spotify->searchTrack($request->q, $token);
+    }
+
+    public function addToQueue(Request $request)
+    {
+        JukeboxQueue::create([
+            'user_id'    => auth()->id(),
+            'track_name' => $request->track_name,
+            'track_uri'  => $request->track_uri
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+public function nowPlaying(SpotifyService $spotify)
 {
     $token = session('spotify_token');
 
     if (!$token) {
-        return response()->json(['error' => 'Spotify não autenticado'], 401);
+        return response()->json(['error' => 'Token Spotify ausente'], 401);
     }
 
-    return $spotify->searchTrack($request->q, $token);
-}
+    $data = $spotify->getCurrentlyPlaying($token);
 
-public function addToQueue(Request $request)
-{
-    JukeboxQueue::create([
-        'user_id'    => auth()->id(),
-        'track_name' => $request->track_name,
-        'track_uri'  => $request->track_uri
+    return response()->json([
+        'playing' => $data
     ]);
-
-    return response()->json(['success' => true]);
 }
+
 
 }

@@ -37,6 +37,20 @@
             @endif
         </div>
     </div>
+    <!-- Música atual -->
+<div class="bg-gray-800 p-6 rounded-xl mb-10">
+    <h2 class="text-xl mb-4">🎧 Tocando agora</h2>
+
+    <div id="now-playing" class="flex items-center gap-6">
+        <div id="cover" class="w-32 h-32 bg-gray-700 rounded-lg"></div>
+
+        <div>
+            <p id="track-name" class="text-lg font-bold">---</p>
+            <p id="track-artist" class="text-gray-400">---</p>
+            <p id="device" class="text-sm text-gray-500 mt-2">---</p>
+        </div>
+    </div>
+</div>
 
     <!-- Próximas músicas -->
     <div class="bg-gray-800 p-6 rounded-xl">
@@ -142,6 +156,39 @@ searchInput.addEventListener('input', () => {
         });
     }, 500);
 });
+</script>
+<script>
+async function updateNowPlaying() {
+    const res = await fetch('/spotify/current');
+    const data = await res.json();
+
+    const cover = document.getElementById('cover');
+    const name = document.getElementById('track-name');
+    const artist = document.getElementById('track-artist');
+    const device = document.getElementById('device');
+
+    if (!data.playing || !data.playing.item) {
+        name.innerText = 'Nada tocando agora';
+        artist.innerText = '';
+        device.innerText = '';
+        cover.innerHTML = '';
+        return;
+    }
+
+    const track = data.playing.item;
+    const image = track.album.images[0]?.url ?? '';
+
+    cover.innerHTML = image
+        ? `<img src="${image}" class="w-32 h-32 rounded-lg object-cover">`
+        : '';
+
+    name.innerText = track.name;
+    artist.innerText = track.artists[0].name;
+    device.innerText = `📱 Tocando em: ${data.playing.device?.name ?? 'Desconhecido'}`;
+}
+
+setInterval(updateNowPlaying, 5000);
+updateNowPlaying();
 </script>
 
 </body>

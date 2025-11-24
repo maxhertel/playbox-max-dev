@@ -34,33 +34,33 @@ class SpotifyService
         ]);
     }
 
-public function getAccessToken($code)
-{
-    $response = Http::asForm()
-        ->withBasicAuth($this->clientId, $this->clientSecret)
-        ->post('https://accounts.spotify.com/api/token', [
-            'grant_type'   => 'authorization_code',
-            'code'         => $code,
-            'redirect_uri' => $this->redirectUri
-        ]);
+    public function getAccessToken($code)
+    {
+        $response = Http::asForm()
+            ->withBasicAuth($this->clientId, $this->clientSecret)
+            ->post('https://accounts.spotify.com/api/token', [
+                'grant_type'   => 'authorization_code',
+                'code'         => $code,
+                'redirect_uri' => $this->redirectUri
+            ]);
 
-    if (!$response->successful()) {
-        logger()->error('Spotify Token Error', [
-            'status' => $response->status(),
-            'body' => $response->json(),
-        ]);
+        if (!$response->successful()) {
+            logger()->error('Spotify Token Error', [
+                'status' => $response->status(),
+                'body' => $response->json(),
+            ]);
 
-        return null;
+            return null;
+        }
+
+        return $response->json();
     }
-
-    return $response->json();
-}
 
 
     public function searchTrack(string $query, string $token)
     {
         return Http::withToken($token)
-            ->get($this->baseUrl.'/search', [
+            ->get($this->baseUrl . '/search', [
                 'q' => $query,
                 'type' => 'track',
                 'limit' => 10
@@ -70,7 +70,7 @@ public function getAccessToken($code)
     public function getDevices($token)
     {
         return Http::withToken($token)
-            ->get($this->baseUrl.'/me/player/devices')
+            ->get($this->baseUrl . '/me/player/devices')
             ->json();
     }
 
@@ -91,12 +91,25 @@ public function getAccessToken($code)
     public function pause(string $token)
     {
         return Http::withToken($token)
-            ->put($this->baseUrl.'/me/player/pause');
+            ->put($this->baseUrl . '/me/player/pause');
     }
 
     public function next(string $token)
     {
         return Http::withToken($token)
-            ->post($this->baseUrl.'/me/player/next');
+            ->post($this->baseUrl . '/me/player/next');
+    }
+
+    public function getCurrentlyPlaying($token)
+    {
+        $response = Http::withToken($token)
+            ->get('https://api.spotify.com/v1/me/player/currently-playing');
+
+        if ($response->status() == 204) {
+            // Nada tocando
+            return null;
+        }
+
+        return $response->json();
     }
 }
