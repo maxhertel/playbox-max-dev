@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\JukeboxQueue;
 use App\Services\SpotifyService;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Http\Request;
 
 class JukeboxController extends Controller
 {
@@ -41,7 +41,7 @@ class JukeboxController extends Controller
         ]);
     }
 
-    public function search(Request $request, SpotifyService      $spotify)
+    public function search(Request $request, SpotifyService $spotify)
 {
     $token = session('spotify_token');
 
