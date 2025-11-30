@@ -23,21 +23,35 @@
 
     <div id="results" class="space-y-2"></div>
 </div>
-    <!-- Música atual -->
-    <div class="bg-gray-800 p-6 rounded-xl mb-10">
-        <h2 class="text-xl mb-2">🎧 Tocando agora</h2>
-        <div id="now-playing">
-            @if($nowPlaying)
-                <p><strong>{{ $nowPlaying->track_name }}</strong></p>
-                <p class="text-sm text-gray-400">
-                    Pedido por: {{ $nowPlaying->user->name ?? 'Anônimo' }}
-                </p>
-            @else
-                <p>Nenhuma música tocando</p>
-            @endif
-        </div>
+<div class="bg-gray-800 p-6 rounded-xl mb-10">
+    <h2 class="text-xl mb-2">🎧 Tocando agora</h2>
+
+    <div id="now-playing">
+        @if($nowPlaying)
+            <p><strong>{{ $nowPlaying->track_name }}</strong></p>
+            <p class="text-sm text-gray-400">
+                Pedido por: {{ $nowPlaying->user->name ?? 'Anônimo' }}
+            </p>
+
+            <!-- Botões -->
+            <div class="mt-4 flex gap-4">
+                <button onclick="jukeboxPlay()"
+                    class="bg-green-600 px-4 py-2 rounded font-bold">
+                    ▶ Play
+                </button>
+
+                <button onclick="jukeboxPause()"
+                    class="bg-red-600 px-4 py-2 rounded font-bold">
+                    ⏸ Pause
+                </button>
+            </div>
+        @else
+            <p>Nenhuma música tocando</p>
+        @endif
     </div>
-    <!-- Música atual -->
+</div>
+
+    <!-- Música atual do-->
 <div class="bg-gray-800 p-6 rounded-xl mb-10">
     <h2 class="text-xl mb-4">🎧 Tocando agora</h2>
 
@@ -189,6 +203,25 @@ async function updateNowPlaying() {
 
 setInterval(updateNowPlaying, 5000);
 updateNowPlaying();
+</script>
+<script>
+async function jukeboxPlay() {
+    await fetch('/jukebox/play', {
+        method: 'POST',
+        headers: {
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+        }
+    });
+}
+
+async function jukeboxPause() {
+    await fetch('/jukebox/pause', {
+        method: 'POST',
+        headers: {
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+        }
+    });
+}
 </script>
 
 </body>

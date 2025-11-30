@@ -1,216 +1,130 @@
-composer create-project laravel/laravel playbox
-Client ID
-73170903781e4772a747de9fc7274e50
+Perfeito — então vamos consertar o que você já começou e transformar no modelo certo de CONTA CENTRAL (jukebox real) ✅
 
-Client secret
-be0a23114dc148dba15e3dd6ada91d7e
+Você já estava perto, só misturou dois fluxos diferentes sem perceber.
+
+✅ O MODELO CERTO (o que você realmente quer)
+
+Você precisa APENAS disso:
+
+1 ÚNICA conta Spotify (do bar)
+1 ÚNICO login OAuth (feito por você)
+
+Usuários do site:
+❌ NÃO fazem login no Spotify
+✅ Só escolhem músicas
+
+Quem controla o player:
+➡️ SOMENTE o Laravel com o token da conta do bar
+
+O erro que estava te travando
+
+Você fez isso sem perceber:
+
+❌ misturou:
+
+login do dono do bar (você)
+
+com login do público (clientes)
+
+E o Spotify passou a pedir autorização para cada pessoa.
+
+Como ajustar isso no seu projeto
+1. Só você faz login no Spotify
+
+Crie rota só para você:
+
+Route::get('/admin/spotify/login', [SpotifyController::class, 'login']);
+Route::get('/admin/spotify/callback', [SpotifyController::class, 'callback']);
 
 
-ngrok                                                                                                   (Ctrl+C to quit)                                                                                                                        ⚠️ Free Users: Agents ≤3.18.x stop connecting 12/17/25. Update or upgrade: https://ngrok.com/pricing                                                                                                                                            Session Status                online                                                                                    Account                       barplayzone@gmail.com (Plan: Free)                                                        Version                       3.33.0                                                                                    Region                        South America (sa)                                                                        Latency                       15ms                                                                                      Web Interface                 http://127.0.0.1:4040                                                                     Forwarding                    https://endoperidial-courdinative-lesley.ngrok-free.dev -> http://localhost:80                                                                                                                                    Connections                   ttl     opn     rt1     rt5     p50     p90                                                                             0       0       0.00    0.00    0.00    0.00                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+E não mostre isso para usuários comuns.
 
-Sim! Dá para fazer tudo diretamente usando HTTP (ou cURL) sem nenhuma biblioteca externa.
-Na verdade, essa é até a forma mais estável, porque você controla toda a comunicação com a API do Spotify.
+2. Salve o token em banco (não em sessão)
 
-Abaixo eu te passo:
+Crie tabela:
 
-✔️ Como gerar tokens pelo OAuth
+php artisan make:migration create_spotify_tokens_table
 
-✔️ Como salvar o refresh token permanentemente
 
-✔️ Como renovar o access token automaticamente
+No migration:
 
-✔️ Como controlar o Spotify usando apenas requisições HTTP / cURL
-
-✔️ Prontos para usar no Laravel
-
-✅ 1) Fluxo correto: usar uma única conta e HTTP puro
-
-Você só faz login no Spotify uma vez, com sua conta (via OAuth).
-Depois salva no banco:
-
-refresh_token
-
-access_token
-
-expires_at
-
-Quando qualquer usuário acessar seu site → você usa sempre esse mesmo token.
-
-🔐 2) Passo único: rota para login no Spotify (OAuth)
-Rota de login:
-Route::get('/spotify/login', function () {
-    $query = http_build_query([
-        'client_id' => env('SPOTIFY_CLIENT_ID'),
-        'response_type' => 'code',
-        'redirect_uri' => env('SPOTIFY_REDIRECT_URI'),
-        'scope' => 'user-modify-playback-state user-read-playback-state user-read-currently-playing',
-    ]);
-
-    return redirect("https://accounts.spotify.com/authorize?$query");
+Schema::create('spotify_tokens', function (Blueprint $table) {
+    $table->id();
+    $table->text('access_token');
+    $table->text('refresh_token');
+    $table->timestamps();
 });
 
-🔄 3) Callback para obter access_token + refresh_token
 
-Este controller salva o refresh token no banco.
+Modelo:
 
-SpotifyController.php
-public function callback(Request $request)
+class SpotifyToken extends Model {
+    protected $fillable = ['access_token', 'refresh_token'];
+}
+
+3. No callback você salva o token fixo
+public function callback(Request $request, SpotifyService $spotify)
 {
-    $code = $request->get('code');
-
-    $response = Http::asForm()->post('https://accounts.spotify.com/api/token', [
-        'grant_type' => 'authorization_code',
-        'code' => $code,
-        'redirect_uri' => env('SPOTIFY_REDIRECT_URI'),
-        'client_id' => env('SPOTIFY_CLIENT_ID'),
-        'client_secret' => env('SPOTIFY_CLIENT_SECRET'),
-    ]);
-
-    $data = $response->json();
+    $token = $spotify->getAccessToken($request->code);
 
     SpotifyToken::updateOrCreate(
         ['id' => 1],
         [
-            'access_token' => $data['access_token'],
-            'refresh_token' => $data['refresh_token'],
-            'expires_at'   => now()->addSeconds($data['expires_in']),
+            'access_token' => $token['access_token'],
+            'refresh_token' => $token['refresh_token']
         ]
     );
 
-    return "Spotify conectado com sucesso!";
+    return redirect('/admin/dashboard');
 }
 
-🔧 4) Serviço para renovar token automaticamente (sem libs)
-app/Services/SpotifyService.php
-namespace App\Services;
+4. Sempre toque música com o token fixo
 
-use Illuminate\Support\Facades\Http;
-use App\Models\SpotifyToken;
+Nunca use session().
 
-class SpotifyService
+private function getToken()
 {
-    public static function token()
-    {
-        $token = SpotifyToken::find(1);
-
-        if (!$token) {
-            throw new \Exception("Spotify não configurado.");
-        }
-
-        // Se o token expirou → renova
-        if (now()->greaterThan($token->expires_at)) {
-
-            $r = Http::asForm()->post('https://accounts.spotify.com/api/token', [
-                'grant_type' => 'refresh_token',
-                'refresh_token' => $token->refresh_token,
-                'client_id' => env('SPOTIFY_CLIENT_ID'),
-                'client_secret' => env('SPOTIFY_CLIENT_SECRET'),
-            ]);
-
-            $data = $r->json();
-
-            $token->access_token = $data['access_token'];
-            $token->expires_at = now()->addSeconds($data['expires_in']);
-            $token->save();
-        }
-
-        return $token->access_token;
-    }
+    return SpotifyToken::first()->access_token;
 }
 
-🎵 5) Controlar o Spotify com HTTP puro (sem libs!)
-▶ Tocar música
-public function play(Request $request)
-{
-    $uri = $request->uri;
-    $token = SpotifyService::token();
+5. Deixar o celular do bar sempre ativo
 
-    $response = Http::withHeaders([
-        'Authorization' => "Bearer $token"
-    ])->put("https://api.spotify.com/v1/me/player/play", [
-        'uris' => [$uri]
-    ]);
+No celular do bar:
 
-    return $response->json();
-}
+✅ Spotify aberto
+✅ Conta do bar logada
+✅ Volume fixo
+✅ Não deixar entrar em economia de bateria
 
-⏸️ Pausar
-public function pause()
-{
-    $token = SpotifyService::token();
+Agora seu sistema vira um Jukebox real
 
-    Http::withHeaders([
-        'Authorization' => "Bearer $token"
-    ])->put("https://api.spotify.com/v1/me/player/pause");
+Usuários fazem:
 
-    return "Pausado";
-}
+Buscar música → escolher → entra na fila
 
-⏭️ Pular faixa
-public function next()
-{
-    $token = SpotifyService::token();
 
-    Http::withHeaders([
-        'Authorization' => "Bearer $token"
-    ])->post("https://api.spotify.com/v1/me/player/next");
+Laravel faz:
 
-    return "Next";
-}
+Toca na conta do bar → sai na caixa de som
 
-➕ Adicionar música à fila
-public function queue(Request $request)
-{
-    $uri = $request->uri;
-    $token = SpotifyService::token();
+Agora a verdade importante
 
-    Http::withHeaders([
-        'Authorization' => "Bearer $token"
-    ])->post("https://api.spotify.com/v1/me/player/queue?uri=$uri");
+Mesmo com esse modelo, o Spotify tem limites:
 
-    return "Adicionada à fila!";
-}
+Se ficar muito tempo sem atividade ele “dorme”
 
-🔍 Buscar músicas
-public function search(Request $request)
-{
-    $query = urlencode($request->q);
-    $token = SpotifyService::token();
+Algumas vezes precisa dar Play manual
 
-    $response = Http::withHeaders([
-        'Authorization' => "Bearer $token"
-    ])->get("https://api.spotify.com/v1/search?q=$query&type=track&limit=10");
+Premium é obrigatório
 
-    return $response->json();
-}
+Quer que eu te monte:
 
-🔥 6) Tudo sem bibliotecas — só HTTP request nativo do Laravel
+refresh automático do token?
 
-Funciona em:
+detecção automática do celular (device_id)?
 
-Laravel 8
+botão Play manual?
 
-Laravel 9
+Me responde:
 
-Laravel 10
-
-Laravel 11
-
-🏆 Resultado final
-
-✔️ Seu site controla o Spotify
-✔️ Apenas uma conta faz login
-✔️ Todos os outros usuários podem:
-
-Buscar músicas
-
-Adicionar à fila
-
-Pular
-
-Tocar
-
-Pausar
-
-✔️ Sem pedir login para ninguém
-✔️ Sem bibliotecas externas                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+👉 quer que eu monte o modo “à prova de falha”?

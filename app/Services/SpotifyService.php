@@ -18,6 +18,11 @@ class SpotifyService
         $this->redirectUri = config('services.spotify.redirect');
     }
 
+    private function getToken()
+    {
+        return SpotifyToken::first()->access_token;
+    }
+
     public function getAuthUrl()
     {
         $scopes = implode(' ', [
@@ -73,21 +78,15 @@ class SpotifyService
             ->get($this->baseUrl . '/me/player/devices')
             ->json();
     }
+public function playTrack(string $token, string $trackUri): bool
+{
+    $response = Http::withToken($token)
+        ->put('https://api.spotify.com/v1/me/player/play', [
+            'uris' => [$trackUri]
+        ]);
 
-    public function playTrack(string $token, string $trackUri, ?string $deviceId = null)
-    {
-        $url = $this->baseUrl . '/me/player/play';
-
-        if ($deviceId) {
-            $url .= '?device_id=' . $deviceId;
-        }
-
-        return Http::withToken($token)
-            ->put($url, [
-                'uris' => [$trackUri]
-            ]);
-    }
-
+    return $response->successful();
+}
     public function pause(string $token)
     {
         return Http::withToken($token)
