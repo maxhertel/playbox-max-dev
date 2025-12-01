@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable();
             $table->string('track_name');
             $table->string('track_uri');
+            $table->integer('is_playing');
             $table->timestamps();
         });
     }

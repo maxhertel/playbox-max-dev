@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class JukeboxQueue extends Model
 {
-    protected $table = 'jukebox_queue';
+    protected $table = 'jukebox_queues';
 
     protected $fillable = [
         'user_id',
