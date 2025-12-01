@@ -25,12 +25,13 @@ class SpotifyController extends Controller
         $token = $spotify->getAccessToken($request->code);
 
         SpotifyToken::updateOrCreate(
-            ['id' => 1],
-            [
-                'access_token' => $token['access_token'],
-                'refresh_token' => $token['refresh_token']
-            ]
-        );
+    ['id' => 1],
+    [
+        'access_token' => $token['access_token'],
+        'refresh_token' => $token['refresh_token'],
+        'expires_at' => now()->addSeconds($token['expires_in'])
+    ]
+);
 
 
         return redirect('/jukebox');
